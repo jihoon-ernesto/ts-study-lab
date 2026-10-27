@@ -11,3 +11,4 @@
 !sync.enc
 !sync-core.mjs
 !sync-transport.mjs
+!app-sync-v2.mjs

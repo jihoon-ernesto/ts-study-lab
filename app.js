@@ -1,23 +1,8 @@
-import { SyncSession, emptyDoc, validateDoc } from './sync-core.mjs';
-import { createTransport } from './sync-transport.mjs';
 'use strict';
 const $ = selector => document.querySelector(selector);
 let activeKey = null;
 let activeManifest = null;
 let busy = false;
-let syncConfig = null;
-let syncSession = null;
-let syncTimer = null;
-let pollTimer = null;
-let stopSync = false;
-let localSaveOK = true;
-const setSyncStatus = kind => {
- const node=$('#sync-status');node.dataset.state=kind;
- $('#book').contentWindow.TSLabStudy?.setCloudStatus?.(kind);
- if(!localSaveOK && (kind==='pending'||kind==='offline')) {node.textContent='기기 저장 실패 · 메모를 내보내세요';return;}
- node.textContent=({pending:'기기에 저장됨 · 동기화 대기',syncing:'동기화 중…',synced:'모든 변경사항 동기화됨',offline:'기기에 보관 중 · 연결되면 재시도',setup:'이 기기에 저장됨'})[kind] || kind;
-};
-
 const decode = text => Uint8Array.from(atob(text), character => character.charCodeAt(0));
 async function getManifest() {
  const response = await fetch('vault.json', {cache:'no-store', credentials:'omit'});
@@ -44,10 +29,7 @@ $('#unlock-form').addEventListener('submit',async event => {
  try {
   const manifest = await getManifest();
   const key = await derive($('#passcode').value.trim(),manifest);
-  const [plaintext, encryptedConfig] = await Promise.all([
-   decryptAsset('book',manifest,key), manifest.assets.sync ? decryptAsset('sync',manifest,key) : Promise.resolve(null)
-  ]);
-  syncConfig=encryptedConfig?JSON.parse(new TextDecoder().decode(encryptedConfig)):null;
+  const plaintext = await decryptAsset('book',manifest,key);
   activeKey=key;activeManifest=manifest;
   $('#passcode').value='';
   $('#book').srcdoc=new TextDecoder('utf-8',{fatal:true}).decode(plaintext);
@@ -70,43 +52,8 @@ $('#download').addEventListener('click',async () => {
  } catch(error) {$('#download-status').textContent=error instanceof Error ? error.message : '다운로드 실패';}
  finally {button.disabled=false;}
 });
-$('#lock').addEventListener('click',async()=>{
- $('#lock').disabled=true;
- if(syncSession) await Promise.race([syncSession.sync(),new Promise(resolve=>setTimeout(resolve,4000))]);
- stopSync=true;syncSession?.close();clearTimeout(syncTimer);clearInterval(pollTimer);
- activeKey=null;activeManifest=null;syncConfig=null;$('#book').removeAttribute('srcdoc');location.reload();
+$('#lock').addEventListener('click',()=>{
+ activeKey=null;activeManifest=null;$('#book').removeAttribute('srcdoc');location.reload();
 });
 // Back-forward cache must not restore an unlocked document from memory.
 window.addEventListener('pageshow',event=>{if(event.persisted) location.reload();});
-
-function readLocal(key,fallback) {try {const value=localStorage.getItem(key);return value===null?fallback:JSON.parse(value);}catch{return fallback;}}
-function writeLocal(key,value) {try{localStorage.setItem(key,JSON.stringify(value));return true;}catch{return false;}}
-async function beginSync(){
- if(!syncConfig){setSyncStatus('setup');return;}
- const api=$('#book').contentWindow.TSLabStudy;
- if(!api)return;
- const ids=api.ids;
- const storeKey=`ts-lab-sync-v2:${syncConfig.projectId}`;
- let device=readLocal('ts-lab-sync-device',null);
- if(typeof device!=='string'||!/^[-a-zA-Z0-9]{1,80}$/.test(device)){device=crypto.randomUUID();writeLocal('ts-lab-sync-device',device);}
- let doc=emptyDoc();try{doc=validateDoc(readLocal(storeKey,emptyDoc()),ids);}catch{}
- try{
-  const transport=await createTransport(syncConfig,ids);
-  syncSession=new SyncSession({device,ids,doc,snapshot:api.getState(),transport,
-   persist:doc=>{localSaveOK=writeLocal(storeKey,doc);},readSnapshot:()=>api.getState(),
-   apply:(state,history)=>{if(stopSync)return;api.applyRemote(state,history);},status:setSyncStatus});
-  $('#sync-now').disabled=false;
-  await syncSession.sync();
-  pollTimer=setInterval(()=>{if(document.visibilityState==='visible'&&!stopSync)syncSession.sync();},15000);
- }catch{setSyncStatus('offline');}
-}
-$('#book').addEventListener('load',()=>{if(activeKey&&!stopSync)beginSync();});
-window.addEventListener('message',event=>{
- if(event.source!==$('#book').contentWindow||event.origin!==location.origin||event.data?.type!=='tslab:changed'||!syncSession||stopSync)return;
- const api=$('#book').contentWindow.TSLabStudy;
- syncSession.capture(api.getState());clearTimeout(syncTimer);syncTimer=setTimeout(()=>syncSession.sync(),1000);
-});
-$('#sync-now').addEventListener('click',()=>{clearTimeout(syncTimer);syncSession?.sync();});
-window.addEventListener('online',()=>syncSession?.sync());
-document.addEventListener('visibilitychange',()=>{if(syncSession&&!stopSync)syncSession.sync();});
-window.addEventListener('focus',()=>{if(syncSession&&!stopSync)syncSession.sync();});

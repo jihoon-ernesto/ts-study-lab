@@ -11,7 +11,7 @@ Static GitHub Pages entry point. The document and download archive are encrypted
 Published files contain only the loader, styles, encryption metadata and ciphertext.
 Unencrypted source material, encryption tooling, the scoped synchronization capability and data encryption key are maintained outside this repository. Synchronization settings are published only in passcode-encrypted sync.enc. No database administrator or service-role key is used in the browser.
 
-Changing the passcode requires re-encrypting both assets and publishing a new version.
+Changing the passcode requires re-encrypting all assets, including sync.enc, and publishing a new version. To revoke a compromised old passcode, also rotate the scoped sync capability and data encryption key and migrate the cloud state; re-encrypting the page alone cannot revoke old downloaded copies.
 Previously downloaded encrypted files remain decryptable with the passcode used for that version.
 
 ## Synchronization
@@ -23,3 +23,5 @@ The database has row-level security. Invoker functions set a transaction-local s
 The hosted version supplies synchronization to the decrypted book. The downloadable offline HTML retains local storage and import/export; it does not contain cloud credentials. A new browser should open the hosted study room to continue across devices.
 
 The mobile layout was checked at 393×852 CSS pixels. Physical iPhone Safari testing is separate. Supabase free projects may pause after prolonged inactivity; the app retains local changes and shows a retry state when the server is unavailable.
+
+The original app.js is retained for older cached HTML. New pages load the versioned module app-sync-v2.mjs.
