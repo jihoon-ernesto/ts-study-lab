@@ -1,0 +1,10 @@
+*
+!.gitignore
+!.nojekyll
+!README.md
+!index.html
+!app.js
+!style.css
+!vault.json
+!book.enc
+!zip.enc

@@ -1,0 +1,22 @@
+{
+  "version": 1,
+  "kdf": {
+    "name": "PBKDF2",
+    "hash": "SHA-256",
+    "iterations": 600000,
+    "salt": "2LFkF3G3Pdsgs+nwiJXPsA=="
+  },
+  "cipher": "AES-GCM",
+  "assets": {
+    "book": {
+      "file": "book.enc",
+      "iv": "2h3AG6RRNmCeBGu0",
+      "aad": "ts-study-v1:book"
+    },
+    "zip": {
+      "file": "zip.enc",
+      "iv": "j5drbQZ6R5vw4Sgr",
+      "aad": "ts-study-v1:zip"
+    }
+  }
+}
