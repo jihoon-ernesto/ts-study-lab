@@ -8,3 +8,6 @@
 !vault.json
 !book.enc
 !zip.enc
+!sync.enc
+!sync-core.mjs
+!sync-transport.mjs

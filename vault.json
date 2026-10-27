@@ -4,19 +4,24 @@
     "name": "PBKDF2",
     "hash": "SHA-256",
     "iterations": 600000,
-    "salt": "2LFkF3G3Pdsgs+nwiJXPsA=="
+    "salt": "EYfZYdorz8Mv196kr8Yleg=="
   },
   "cipher": "AES-GCM",
   "assets": {
     "book": {
       "file": "book.enc",
-      "iv": "2h3AG6RRNmCeBGu0",
+      "iv": "SzImHARveq0ox3Lt",
       "aad": "ts-study-v1:book"
     },
     "zip": {
       "file": "zip.enc",
-      "iv": "j5drbQZ6R5vw4Sgr",
+      "iv": "KUBHIUlGvkCO4zWX",
       "aad": "ts-study-v1:zip"
+    },
+    "sync": {
+      "file": "sync.enc",
+      "iv": "xrd5vQqanPYpp2CS",
+      "aad": "ts-study-v1:sync"
     }
   }
 }
